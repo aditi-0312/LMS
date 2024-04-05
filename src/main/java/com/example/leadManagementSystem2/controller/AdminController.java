@@ -1,7 +1,7 @@
 package com.example.leadManagementSystem2.controller;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,22 +16,27 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.example.leadManagementSystem2.Entity.BusinessAssociate;
 import com.example.leadManagementSystem2.Entity.BusinessAssociateHistory;
+import com.example.leadManagementSystem2.Entity.Course;
 import com.example.leadManagementSystem2.Entity.EmployeeDetails;
 import com.example.leadManagementSystem2.Entity.Leads;
+import com.example.leadManagementSystem2.Entity.LeadsConversation;
 import com.example.leadManagementSystem2.Entity.Users_Credentials;
+import com.example.leadManagementSystem2.Entity.WalletDetails;
 import com.example.leadManagementSystem2.Repository.BusinessAssociateHistoryRepo;
 import com.example.leadManagementSystem2.Repository.BusinessAssociateRepository;
+import com.example.leadManagementSystem2.Repository.CourseRepository;
 import com.example.leadManagementSystem2.Repository.EmployeeDetailsRepository;
 import com.example.leadManagementSystem2.Repository.LeadsRepository;
 import com.example.leadManagementSystem2.Repository.User_Credentials_Repository;
+import com.example.leadManagementSystem2.Repository.WalletDetailsRepository;
 import com.example.leadManagementSystem2.Service.BusinessAssociateService;
-import com.example.leadManagementSystem2.Service.DataFetchingService;
 import com.example.leadManagementSystem2.Service.EmployeeService;
+import com.example.leadManagementSystem2.Service.LeadService;
 import com.example.leadManagementSystem2.Service.UserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -42,30 +47,36 @@ import jakarta.validation.Valid;
 public class AdminController {
 
 	@Autowired
-	User_Credentials_Repository user_Credentials_Repository;
+	private User_Credentials_Repository user_Credentials_Repository;
 	@Autowired
-	LeadsRepository leadsRepository;
+	private LeadsRepository leadsRepository;
 
 	@Autowired
 	private UserService userService;
 
 	@Autowired
-	DataFetchingService dataFetchingService;
+	private BusinessAssociateRepository businessAssociateRepository;
 
 	@Autowired
-	BusinessAssociateRepository businessAssociateRepository;
+	private BusinessAssociateHistoryRepo businessAssociateHistoryRepo;
 
 	@Autowired
-	BusinessAssociateHistoryRepo businessAssociateHistoryRepo;
-
-	@Autowired
-	BusinessAssociateService businessAssociateService;
+	private BusinessAssociateService businessAssociateService;
 
 	@Autowired
 	private EmployeeService employeeService;
 
 	@Autowired
 	private EmployeeDetailsRepository employeeDetailsRepository;
+
+	@Autowired
+	private LeadService leadService;
+
+	@Autowired
+	private CourseRepository courseRepository;
+	
+	@Autowired
+	private WalletDetailsRepository walletDetailsRepository;
 
 	@GetMapping("/admin_Dashboard")
 	public String getAdminDashboard(Model model, HttpSession session) {
@@ -81,6 +92,11 @@ public class AdminController {
 
 		EmployeeDetails employeeDetails = user.getEmployeeDetails();
 		session.setAttribute("employeeDetails", employeeDetails);
+
+		long numberOfLeads = leadsRepository.count();
+		model.addAttribute("numberOfLeads", numberOfLeads);
+
+		model.addAttribute("numberOfFreshLeads", leadService.getLeadsDetailsByStatus("New").size());
 
 		return "Admin/Admin_Dashboard";
 	}
@@ -118,7 +134,7 @@ public class AdminController {
 			session.setAttribute("msg", "Something went wrong!");
 		}
 
-		return "redirect:/Admin/registration";
+		return "redirect:/Admin/admin_Dashboard/registration";
 	}
 
 	/* Leads Start */
@@ -127,15 +143,17 @@ public class AdminController {
 	@GetMapping("/admin_Dashboard/freshleads")
 	public String getFreshLeads(Model model) {
 
-		model.addAttribute("leads", dataFetchingService.getFreshLeadsDetails("New"));
+		model.addAttribute("leads", leadService.getLeadsDetailsByStatus("New"));
+
 		return "Admin/FreshLeads";
 	}
 
 	// Follow Up Leads
 	@GetMapping("/admin_Dashboard/followupleads")
 	public String getFollowUpLeads(Model model) {
-		
-		model.addAttribute("leads" ,dataFetchingService.getFreshLeadsDetails("Follow up"));
+
+		model.addAttribute("leads", leadService.getLeadsDetailsByStatus("Follow up"));
+
 		return "Admin/FollowUpLeads";
 
 	}
@@ -144,14 +162,18 @@ public class AdminController {
 	@GetMapping("/admin_Dashboard/successleads")
 	public String getSuccessLeads(Model model) {
 
-		model.addAttribute("leads", dataFetchingService.getFreshLeadsDetails("Success"));
+		model.addAttribute("leads", leadService.getLeadsDetailsByStatus("Success"));
 		return "Admin/SuccessLeads";
 	}
 
+	// All Leads
 	@GetMapping("/admin_Dashboard/Leads")
 	public String getAllLeads(ModelMap model) {
 
-		model.addAttribute("Leads", dataFetchingService.getAllLeadsDetails());
+		List<Leads> leads = leadService.getAllLeadsDetails();
+
+		model.addAttribute("Leads", leads);
+		// model.addAttribute("Employees", employeeService.getAllEmployees());
 		return "Admin/AllLeads";
 	}
 
@@ -176,12 +198,12 @@ public class AdminController {
 		existingLead.setCourse(leads.getCourse());
 		existingLead.setMessage(leads.getMessage());
 		existingLead.setLeadStatus(leads.getLeadStatus());
-		
-		
+
 		try {
-			leadsRepository.save(existingLead);			
+			businessAssociateService.walletUpdate(existingLead);
+			leadsRepository.save(existingLead);
 			session.setAttribute("msg", "Updated Successfully");
-		}  catch (Exception e) {
+		} catch (Exception e) {
 			session.setAttribute("msg", "Something went wrong!");
 		}
 		return "redirect:/Admin/admin_Dashboard/Leads/edit/{id}";
@@ -194,6 +216,14 @@ public class AdminController {
 		return "redirect:/Admin/admin_Dashboard/Leads";
 	}
 
+	@PostMapping("/admin_Dashboard/Leads/saveconversation/{id}")
+	public String saveConversationOfLead(@PathVariable Long id, @ModelAttribute LeadsConversation leadsConversation) {
+
+		leadService.saveLeadsConversation(id, leadsConversation);
+
+		return "redirect:/Admin/admin_Dashboard/Leads/edit/{id}";
+	}
+
 	/* Leads End */
 
 	// BusinessAssociate start
@@ -201,10 +231,10 @@ public class AdminController {
 	@GetMapping("/admin_Dashboard/ApproveBusinessAssociate")
 	public String getApproveBusinessAssociatePage(ModelMap model) {
 
-		List<BusinessAssociate> approvedBAs = businessAssociateRepository.findByApproval(false); // dataFetchingService.getBusinessAssociateByApprove(false);
+		List<BusinessAssociate> approvedBAs = businessAssociateService.getBusinessAssociateByApprove(false); // dataFetchingService.getBusinessAssociateByApprove(false);
 
 		model.addAttribute("approvedBusinessAssociates", approvedBAs);
-		
+
 		return "Admin/VerifyBusinessAssociate";
 
 	}
@@ -236,13 +266,12 @@ public class AdminController {
 		return "redirect:/Admin/admin_Dashboard/ApproveBusinessAssociate";
 	}
 
-
 	@GetMapping("/admin_Dashboard/businessAssociatePage")
 	public String getBusinessAssociatePage(ModelMap model) {
 
-		List<BusinessAssociate> businessAssociate = businessAssociateRepository.findByApproval(true);
+		List<BusinessAssociate> businessAssociate = businessAssociateService.getBusinessAssociateByApprove(true);
 		model.addAttribute("approvedBusinessAssociates", businessAssociate);
-		
+
 		return "Admin/ApprovedBusinessAssociate";
 
 	}
@@ -255,9 +284,9 @@ public class AdminController {
 
 		return "Admin/RejectedBusinessAssociate";
 	}
-	
-	//BusinessAssociate End
-	
+
+	// BusinessAssociate End
+
 	@GetMapping("/profile")
 	public String getProfile(Model model) {
 
@@ -267,30 +296,188 @@ public class AdminController {
 
 	@GetMapping("/admin_Dashboard/users")
 	public String getCallerDetails() {
-		return "Admin/UsersDetails";
+		return "Admin/SearchEmployee";
 	}
-	
+
 	@GetMapping("/admin_Dashboard/users/{id}")
 	public String getSearchedEmployee(@PathVariable("id") Long id, Model model) {
-		
-		EmployeeDetails employeeDetails =   employeeDetailsRepository.findById(id).get();
-		
+
+		EmployeeDetails employeeDetails = employeeDetailsRepository.findById(id).get();
+
 		model.addAttribute("employee", employeeDetails);
-		
+
 		return "Admin/EmployeePage";
+	}
+
+	// user search in user menu
+
+	@GetMapping("/admin_Dashboard/users/search/{query}")
+	@ResponseBody
+	public ResponseEntity<?> search(@PathVariable("query") String query) {
+
+		System.out.println(query);
+
+		List<EmployeeDetails> employees = this.employeeDetailsRepository.findByUserNameContaining(query);
+
+		return ResponseEntity.ok(employees);
+	}
+
+	// lead search in all leads
+
+	@GetMapping("/admin_Dashboard/Leads/search/{query}")
+	@ResponseBody
+	public ResponseEntity<?> searchLead(@PathVariable("query") String query) {
+
+		System.out.println(query);
+
+		List<Leads> leads = this.leadsRepository.findByEmailContaining(query);
+
+		return ResponseEntity.ok(leads);
+	}
+
+	@GetMapping("/admin_Dashboard/businessAssociateUnderFM/{id}")
+	public String businessAssociateUnderFieldManager(@PathVariable Long id, Model model) {
+		List<BusinessAssociate> businessAssociates = businessAssociateService.findByFieldManagerId(id);
+		model.addAttribute("businessAssociates", businessAssociates);
+		return "Admin/BusinessAssociateUnderFM";
+	}
+
+	@GetMapping("/admin_Dashboard/leadsUnderCaller/{id}")
+	public String leadsUnderCaller(@PathVariable Long id, Model model) {
+
+		// Users_Credentials users_Credentials =
+		// user_Credentials_Repository.getById(id);
+		// users_Credentials.getEmployeeDetails()
+
+		EmployeeDetails employeeDetails = employeeDetailsRepository.findById(id).get();
+
+		List<Leads> leads = employeeDetails.getLeads();
+
+		model.addAttribute("leads", leads);
+
+		model.addAttribute("callerId", id);
+		return "Admin/LeadsOfParticularCaller";
+	}
+
+
+	// BA search in approved BA
+
+	@GetMapping("/admin_Dashboard/BusinessAssociate/search/{query}")
+	@ResponseBody
+	public ResponseEntity<?> searchBusinessAssociate(@PathVariable("query") String query) {
+
+		System.out.println(query);
+
+		List<BusinessAssociate> businessAssociates = this.businessAssociateRepository.findByUserNameContaining(query);
+
+		return ResponseEntity.ok(businessAssociates);
+	}
+
+	@GetMapping("/admin_Dashboard/Users/edit/{id}")
+	public String getEditEmployeePage(@PathVariable Long id, Model model) {
+
+		model.addAttribute("employee", employeeDetailsRepository.findById(id).get());
+		return "Admin/EditEmployee";
+	}
+
+	@PostMapping("/admin_Dashboard/Users/edit/{id}")
+	// @Transactional
+	public String updateEmployee(@PathVariable Long id, @ModelAttribute EmployeeDetails employee) {
+
+		// model.addAttribute("employee", employeeDetailsRepository.findById(id).get());
+
+		employeeService.updateEmployeeDetails(id, employee);
+
+		try {
+
+			// employeeService.saveEmployeeDetails(existingEmp);
+			// session.setAttribute("msg", "Updated Successfully");
+		} catch (Exception e) {
+			System.out.println(e);// session.setAttribute("msg", "Something went wrong!");
+		}
+
+		return "redirect:/Admin/admin_Dashboard/Users/edit/{id}";
+	}
+
+	@GetMapping("/admin_Dashboard/addCourse")
+	public String getAddCoursePage(Model model) {
+
+		model.addAttribute("Courses", courseRepository.findAll());
+
+		return "Admin/AddCourse";
+	}
+
+	@PostMapping("/admin_Dashboard/saveCourse")
+	public String saveCourse(@ModelAttribute Course course) {
+
+		courseRepository.save(course);
+		return "redirect:/Admin/admin_Dashboard/addCourse";
+	}
+
+	@GetMapping("/admin_Dashboard/deleteCourse/{id}")
+	public String deleteCourse(@PathVariable Long id) {
+
+		courseRepository.deleteById(id);
+
+		return "redirect:/Admin/admin_Dashboard/addCourse";
+	}
+
+	// method to transfer selected leads
+
+	@PostMapping("/admin_Dashboard/leadsUnderCaller/{id}")
+	public String transferSelectedLeads(@PathVariable Long id,
+			@RequestParam("leadIds") List<List<String>> leadIdsAsStrings,
+			@RequestParam("newCallerId") Long newCallerId) {
+
+		// Flatten the list of lists into a single list of strings and remove square brackets and quotes
+	    List<String> flattenedLeadIds = leadIdsAsStrings.stream()
+	                                                    .flatMap(List::stream)
+	                                                    .map(s -> s.replaceAll("[\\[\\]\"]", ""))
+	                                                    .collect(Collectors.toList());
+
+	    // Convert List<String> to List<Long> using a stream
+	    List<Long> leadIds = flattenedLeadIds.stream()
+	                                          .map(Long::valueOf)
+	                                          .collect(Collectors.toList());
+		System.out.println(leadIds);
+		System.out.println(newCallerId);
+
+// Call the service with the converted leadIds
+		leadService.transferSelectedLeads(leadIds, newCallerId);
+
+		return "redirect:/Admin/admin_Dashboard/leadsUnderCaller/{id}";
 	}
 	
 	
+	//Payment of BA
 	
-	@GetMapping("/admin_Dashboard/users/search/{query}")
-	@ResponseBody
-	public ResponseEntity<?> search(@PathVariable("query") String query){
+	@GetMapping("/admin_Dashboard/paymentRequest")
+	public String paymentRequestPage(Model model) {
 		
-		System.out.println(query);
+		model.addAttribute("walletDetails", walletDetailsRepository.findAll());
+		return "Admin/BusinessAssociatePaymentRequest";
+	}
+	
+	@PostMapping("/admin_Dashboard/ApprovePaymentRequest/{id}")
+	public String approvePayment(@PathVariable("id") Long id, @ModelAttribute WalletDetails walletDetails ) {
 		
-		List<EmployeeDetails> employees=this.employeeDetailsRepository.findByUserNameContaining(query);
+		WalletDetails walletDetails2 = walletDetailsRepository.findById(id).get();
+		walletDetails2.setTransaction_id(walletDetails.getTransaction_id());
+		walletDetails2.setStatus("Approved");
 		
-		return ResponseEntity.ok(employees);
+		walletDetailsRepository.save(walletDetails2);
+		return "redirect:/Admin/admin_Dashboard/paymentRequest";
+	}
+	
+	@PostMapping("/admin_Dashboard/RejectPaymentRequest/{id}")
+	public String rejectPayment(@PathVariable("id") Long id, @ModelAttribute WalletDetails walletDetails ) {
+		
+		WalletDetails walletDetails2 = walletDetailsRepository.findById(id).get();
+		walletDetails2.setRejection_reason(walletDetails.getRejection_reason());
+		walletDetails2.setStatus("Rejected");
+		
+		walletDetailsRepository.save(walletDetails2);
+		return "redirect:/Admin/admin_Dashboard/paymentRequest";
 	}
 
 }

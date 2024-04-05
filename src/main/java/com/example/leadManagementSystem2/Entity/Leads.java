@@ -1,5 +1,9 @@
 package com.example.leadManagementSystem2.Entity;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -23,7 +28,6 @@ public class Leads {
 	
 	@NotBlank(message="Email cannot be empty!!")
 	@Email(message="Invalid email format!")
-	@Column(unique = true)
 	private String email;
 	
 	@NotBlank(message="Phone cannot be empty!!")
@@ -41,7 +45,21 @@ public class Leads {
 	
 	@ManyToOne
 	@JoinColumn(name = "businessAssociate_id")
+	@JsonIgnore
 	private BusinessAssociate businessAssociate;
+	
+	@ManyToOne
+	@JoinColumn(name = "employee_id")
+	@JsonIgnore
+	private EmployeeDetails employeeDetails;
+	
+	@OneToMany(mappedBy = "leads")
+	@JsonIgnore
+	private List<LeadsConversation> leadsConversation;
+	
+	@OneToOne(mappedBy = "leads")
+	@JsonIgnore
+	private WalletDetails walletDetails;
 
 	public Long getId() {
 		return Id;
@@ -115,13 +133,41 @@ public class Leads {
 		this.businessAssociate = businessAssociate;
 	}
 
+	public EmployeeDetails getEmployeeDetails() {
+		return employeeDetails;
+	}
+
+	public void setEmployeeDetails(EmployeeDetails employeeDetails) {
+		this.employeeDetails = employeeDetails;
+	}
+
+	public List<LeadsConversation> getLeadsConversation() {
+		return leadsConversation;
+	}
+
+	public void setLeadsConversation(List<LeadsConversation> leadsConversation) {
+		this.leadsConversation = leadsConversation;
+	}
+
+	public WalletDetails getWalletDetails() {
+		return walletDetails;
+	}
+
+	public void setWalletDetails(WalletDetails walletDetails) {
+		this.walletDetails = walletDetails;
+	}
+
 	public Leads() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public Leads(Long id, String name, String email, String phone, String address, String course, String message,
-			String leadStatus, BusinessAssociate businessAssociate) {
+	public Leads(Long id, @NotBlank(message = "name cannot be empty!!") String name,
+			@NotBlank(message = "Email cannot be empty!!") @Email(message = "Invalid email format!") String email,
+			@NotBlank(message = "Phone cannot be empty!!") String phone,
+			@NotBlank(message = "Address cannot be empty!!") String address, String course, String message,
+			String leadStatus, BusinessAssociate businessAssociate, EmployeeDetails employeeDetails,
+			List<LeadsConversation> leadsConversation, WalletDetails walletDetails) {
 		super();
 		Id = id;
 		this.name = name;
@@ -132,15 +178,21 @@ public class Leads {
 		this.message = message;
 		this.leadStatus = leadStatus;
 		this.businessAssociate = businessAssociate;
+		this.employeeDetails = employeeDetails;
+		this.leadsConversation = leadsConversation;
+		this.walletDetails = walletDetails;
 	}
 
 	@Override
 	public String toString() {
 		return "Leads [Id=" + Id + ", name=" + name + ", email=" + email + ", phone=" + phone + ", address=" + address
 				+ ", course=" + course + ", message=" + message + ", leadStatus=" + leadStatus + ", businessAssociate="
-				+ businessAssociate + "]";
+				+ businessAssociate + ", employeeDetails=" + employeeDetails + ", leadsConversation="
+				+ leadsConversation + ", walletDetails=" + walletDetails + "]";
 	}
+
 	
+
 	
 	
 }

@@ -8,7 +8,28 @@
 
 <section>
 
-<div class="card text-center m-3" th:each="LeadsDetail: ${Leads}">
+<div class="card text-center m-3">
+ <h2 >All Leads</h2>
+ </div>
+
+<div class="card m-3">
+		<!-- search -->
+		<div class="search-container m-3 border border-4 rounded">
+
+			<input onkeyup="search()" id="search-input" type="text" class="form-control"
+				placeholder="search lead" />
+
+			<div class="search-result">
+
+				<!-- <h2>This is search result</h2> -->
+				
+				<!-- result goes here -->
+
+			</div>
+		</div>
+		
+
+<div class="card-body text-center m-3 border border-2 border-secondary" th:each="LeadsDetail: ${Leads}">
   <div class="card-header" >
   
   	 <span class = "float-sm-start fw-bold me-2">ID:-</span>
@@ -24,7 +45,7 @@
    
   </div>
   
-  <div class="card-body">
+  <div class="card-text">
   
   
       <table class="table table-bordered table-hover  ">
@@ -51,6 +72,35 @@
   </tbody>
   
   </table>
+  
+    
+    <h6 class="mt-5">Follow Up History</h6>
+    <hr class="mt-0 mb-4">
+    
+  <table class="table table-bordered table-hover  ">
+  <thead class= "bg-warning bg-gradient table-sm text-light">
+ 					 <tr>
+  					
+						
+						<th class="col-1">Date</th>
+						<th class="col-9">Conversation Message</th>
+						<th>Next Follow Up Date </th>
+						<th>Next Follow Up Time</th>
+						
+  					</tr>
+  </thead>
+  
+  <tbody>
+  					<tr th:each= "conversation : ${LeadsDetail.getLeadsConversation()}">
+						<td th:text="${conversation.date}">03/03/2024</td>
+						<td th:text="${conversation.message}"></td>
+						<td th:text="${conversation.nextFollowUpDate}">03/03/2024</td>
+						<td th:text="${conversation.nextFollowUpTime}">5:15 PM</td>
+						
+					</tr>
+  </tbody>
+  
+  </table>
     
   </div>
   
@@ -59,13 +109,11 @@
 
 <a
 	th:href="@{/Caller/Caller_Dashboard/Leads/edit/{id}(id=${LeadsDetail.Id})}" 
-class="btn btn-primary me-2"> <i class="fas fa-edit me-2"></i> <span>Edit</span> </a> 
-
-<a
-th:href="@{/Caller/Caller_Dashboard/Leads/edit/{id}(id=${LeadsDetail.Id})}"
-class="btn btn-danger "> <i class="fas fa-trash-alt me-2"></i> <span>Delete</span> </a>
+class="btn btn-primary me-2"> <i class="fas fa-edit me-2"></i> <span>Change Status / <i class="fas fa-plus me-2 ms-2"></i> App Follow Up</span> </a> 
 
 	</div> 
+ 
+ </div>
  
  </div>
 

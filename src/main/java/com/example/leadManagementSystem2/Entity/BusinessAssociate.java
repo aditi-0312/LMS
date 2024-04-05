@@ -8,12 +8,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 @Entity
 public class BusinessAssociate {
@@ -21,55 +22,64 @@ public class BusinessAssociate {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
-	@NotBlank(message="name cannot be empty!!")
+
+	@NotBlank(message = "name cannot be empty!!")
 	private String name;
-	
-	@NotBlank(message="Email cannot be empty!!")
-	@Email(message="Invalid email format!")
+
+	@NotBlank(message = "Email cannot be empty!!")
+	@Email(message = "Invalid email format!")
 	@Column(unique = true)
 	private String userName;
-	
-	@NotBlank(message="Phone cannot be empty!!")
+
+	@NotBlank(message = "Phone cannot be empty!!")
 	private String phone;
-	
-	@NotBlank(message="Address cannot be empty!!")
+
+	@NotBlank(message = "Address cannot be empty!!")
 	private String address;
-	
-	@NotBlank(message="Business name cannot be empty!!")
+
+	@NotBlank(message = "Business name cannot be empty!!")
 	private String businessName;
-	
-	@NotBlank(message="Pan number cannot be empty!!")
-	@Pattern(regexp = "[A-Z]{5}[0-9]{4}[A-Z]{1}", message="Invalid PAN number")
+
+	@NotBlank(message = "Pan number cannot be empty!!")
+	@Pattern(regexp = "[A-Z]{5}[0-9]{4}[A-Z]{1}", message = "Invalid PAN number")
 	private String panNumber;
-	
-	@NotBlank(message="Aadhaar number cannot be empty!!")
-	@Pattern(regexp = "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}", message="Invalid Aadhaar number")
+
+	@NotBlank(message = "Aadhaar number cannot be empty!!")
+	@Pattern(regexp = "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}", message = "Invalid Aadhaar number")
 	private String aadhaarNumber;
-	
-	@NotBlank(message="Account number cannot be empty!!")
+
+	@NotBlank(message = "Account number cannot be empty!!")
 	private String accountNumber;
-	
-	@NotBlank(message="Account holder name cannot be empty!!")
+
+	@NotBlank(message = "Account holder name cannot be empty!!")
 	private String accountHolderName;
-	
-	@NotBlank(message="IFSC code cannot be empty!!")
-	@Pattern(regexp = "[A-Z]{4}0[A-Z0-9]{6}", message="Invalid IFSC Code")
+
+	@NotBlank(message = "IFSC code cannot be empty!!")
+	@Pattern(regexp = "[A-Z]{4}0[A-Z0-9]{6}", message = "Invalid IFSC Code")
 	private String ifscCode;
-	
-	@NotBlank(message="Branch Address cannot be empty!!")
+
+	@NotBlank(message = "Branch Address cannot be empty!!")
 	private String branchAddress;
-	
-	//@NotBlank(message="name cannot be empty!!")
+
+	// @NotBlank(message="name cannot be empty!!")
 	private String password;
-	
+
 	private boolean approval;
+	
+	private Long wallet = 0L;
 
 	@OneToOne(mappedBy = "businessAssociate", cascade = CascadeType.ALL)
 	private Users_Credentials users_Credentials;
-	
+
 	@OneToMany(mappedBy = "businessAssociate")
 	private List<Leads> leads;
+
+	@ManyToOne
+	@JoinColumn(name = "fieldManager_id")
+	private EmployeeDetails fieldManager;
+	
+	@OneToMany(mappedBy = "businessAssociate")
+	private List<WalletDetails> walletDetails;
 
 	public Long getId() {
 		return id;
@@ -199,15 +209,49 @@ public class BusinessAssociate {
 		this.leads = leads;
 	}
 
+	public EmployeeDetails getFieldManager() {
+		return fieldManager;
+	}
+
+	public void setFieldManager(EmployeeDetails fieldManager) {
+		this.fieldManager = fieldManager;
+	}
+
+	public Long getWallet() {
+		return wallet;
+	}
+
+	public void setWallet(Long wallet) {
+		this.wallet = wallet;
+	}
+	
+
+	public List<WalletDetails> getWalletDetails() {
+		return walletDetails;
+	}
+
+	public void setWalletDetails(List<WalletDetails> walletDetails) {
+		this.walletDetails = walletDetails;
+	}
+
 	public BusinessAssociate() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public BusinessAssociate(Long id, String name, String userName, String phone, String address, String businessName,
-			String panNumber, String aadhaarNumber, String accountNumber, String accountHolderName, String ifscCode,
-			String branchAddress, String password, boolean approval, Users_Credentials users_Credentials,
-			List<Leads> leads) {
+	public BusinessAssociate(Long id, @NotBlank(message = "name cannot be empty!!") String name,
+			@NotBlank(message = "Email cannot be empty!!") @Email(message = "Invalid email format!") String userName,
+			@NotBlank(message = "Phone cannot be empty!!") String phone,
+			@NotBlank(message = "Address cannot be empty!!") String address,
+			@NotBlank(message = "Business name cannot be empty!!") String businessName,
+			@NotBlank(message = "Pan number cannot be empty!!") @Pattern(regexp = "[A-Z]{5}[0-9]{4}[A-Z]{1}", message = "Invalid PAN number") String panNumber,
+			@NotBlank(message = "Aadhaar number cannot be empty!!") @Pattern(regexp = "[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}", message = "Invalid Aadhaar number") String aadhaarNumber,
+			@NotBlank(message = "Account number cannot be empty!!") String accountNumber,
+			@NotBlank(message = "Account holder name cannot be empty!!") String accountHolderName,
+			@NotBlank(message = "IFSC code cannot be empty!!") @Pattern(regexp = "[A-Z]{4}0[A-Z0-9]{6}", message = "Invalid IFSC Code") String ifscCode,
+			@NotBlank(message = "Branch Address cannot be empty!!") String branchAddress, String password,
+			boolean approval, Long wallet, Users_Credentials users_Credentials, List<Leads> leads,
+			EmployeeDetails fieldManager, List<WalletDetails> walletDetails) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -223,8 +267,11 @@ public class BusinessAssociate {
 		this.branchAddress = branchAddress;
 		this.password = password;
 		this.approval = approval;
+		this.wallet = wallet;
 		this.users_Credentials = users_Credentials;
 		this.leads = leads;
+		this.fieldManager = fieldManager;
+		this.walletDetails = walletDetails;
 	}
 
 	@Override
@@ -233,10 +280,12 @@ public class BusinessAssociate {
 				+ ", address=" + address + ", businessName=" + businessName + ", panNumber=" + panNumber
 				+ ", aadhaarNumber=" + aadhaarNumber + ", accountNumber=" + accountNumber + ", accountHolderName="
 				+ accountHolderName + ", ifscCode=" + ifscCode + ", branchAddress=" + branchAddress + ", password="
-				+ password + ", approval=" + approval + ", users_Credentials=" + users_Credentials + ", leads=" + leads
-				+ "]";
+				+ password + ", approval=" + approval + ", wallet=" + wallet + ", users_Credentials="
+				+ users_Credentials + ", leads=" + leads + ", fieldManager=" + fieldManager + ", walletDetails="
+				+ walletDetails + "]";
 	}
+
 	
 	
-	
+
 }

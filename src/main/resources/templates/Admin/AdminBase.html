@@ -78,6 +78,10 @@
 						class="list-group-item list-group-item-action py-2 ripple"> <i
 						class="fas fa-user-circle me-3"></i><span> Add Employee</span>
 					</a>
+					
+					<a href="#" th:href="@{/Admin/admin_Dashboard/addCourse}"
+						class="list-group-item list-group-item-action py-2 ripple"> <i class="fas fa-book me-3"></i><span> Add Course</span>
+					</a>
 
 
 
@@ -102,10 +106,7 @@
 								Approved </a> <a href="#"
 								th:href="@{/Admin/admin_Dashboard/rejectedBusinessAssociate}"
 								class="list-group-item list-group-item-action px-3 border-0">
-								Rejected </a> <a href="#"
-								th:href="@{/Admin/admin_Dashboard/rejectedBusinessAssociate}"
-								class="list-group-item list-group-item-action px-3 border-0">
-								NEW </a>
+								Rejected </a> 
 							<!-- Add more dropdown items here if needed -->
 						</div>
 					</div>
@@ -115,7 +116,12 @@
 
 					<a href="#" th:href="@{/Admin/admin_Dashboard/users}"
 						class="list-group-item list-group-item-action py-2 ripple"><i
-						class="fas fa-users fa-fw me-3"></i><span>Users</span> </a>
+						class="fas fa-users fa-fw me-3"></i><span>Search Emp.</span> </a>
+						
+						
+					<a href="#" th:href="@{/Admin/admin_Dashboard/paymentRequest}"
+						class="list-group-item list-group-item-action py-2 ripple"> <i class="fab fa-amazon-pay me-3"></i><span>Payment</span>
+					</a>
 
 
 					<hr>

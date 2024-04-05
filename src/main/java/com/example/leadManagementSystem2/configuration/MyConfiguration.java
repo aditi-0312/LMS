@@ -10,9 +10,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 
 @Configuration
+//@EnableTransactionManagement
 @EnableWebSecurity
 public class MyConfiguration {
 
@@ -46,11 +48,12 @@ public class MyConfiguration {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable);
 		
 		httpSecurity.authorizeHttpRequests(request->{
-	            request.requestMatchers("/", "/login", "/CustomersForm" ,"/Admin/registration","/saveLeads" , "/css/**" ,  "/addAdmin", "/SaveAdmin","/form","/process","/img/Suprams_logo.jpg", "/img/Bg.jpeg", "/img/**").permitAll();
+	            request.requestMatchers("/", "/login", "/CustomersForm/**" , "/saveLeads/**" , "/Admin/registration" , "/css/**" ,  "/addAdmin", "/SaveAdmin","/form","/process","/img/Suprams_logo.jpg", "/img/Bg.jpeg", "/img/**").permitAll();
 	            request.requestMatchers("/user/**").hasRole("USER");
 	            request.requestMatchers("/Admin/**").hasRole("ADMIN");
 	            request.requestMatchers("/Caller/**").hasRole("CALLER");
 	            request.requestMatchers("/fieldManager/**").hasRole("FIELDMANAGER");
+	            request.requestMatchers("/Manager/**").hasRole("MANAGER");
 	            request.requestMatchers("/businessAssociate/**").hasRole("BUSINESSASSOCIATE");
 	            request.anyRequest().authenticated();
 	            
